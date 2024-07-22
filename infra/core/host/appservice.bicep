@@ -30,8 +30,9 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
     serverFarmId: appServicePlanId
     siteConfig: {
       windowsFxVersion: runtimeNameAndVersion
+      webSocketsEnabled: true
     }
-    websocketsEnabled: true
+    httpsOnly: true
   }
   
   identity: {
