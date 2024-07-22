@@ -15,10 +15,6 @@ param location string
 
 param storageAccountName string = ''
 param appServicePlanName string = ''
-param containerAppsEnvName string = ''
-param containerAppsAppName string = ''
-
-param serviceName string = 'web'
 
 // Optional parameters to override the default azd resource naming conventions.
 // Add the following to main.parameters.json to provide values:
@@ -43,14 +39,6 @@ var tags = {
 #disable-next-line no-unused-vars
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 
-// Name of the service defined in azure.yaml
-// A tag named azd-service-name with this value should be applied to the service host resource, such as:
-//   Microsoft.Web/sites for appservice, function
-// Example usage:
-//   tags: union(tags, { 'azd-service-name': apiServiceName })
-#disable-next-line no-unused-vars
-var apiServiceName = 'python-api'
-
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -62,6 +50,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // A full example that leverages azd bicep modules can be seen in the todo-python-mongo template:
 // https://github.com/Azure-Samples/todo-python-mongo/tree/main/infra
 
+// Create a user assigned identity
 module identity './app/user-assigned-identity.bicep' = {
   name: 'identity'
   scope: rg
@@ -70,16 +59,17 @@ module identity './app/user-assigned-identity.bicep' = {
   }
 }
 
+// Create a cosmos db account
 module cosmos 'app/cosmos.bicep' = {
   name: 'cosmos'
   scope: rg
   params: {
-    principalId: principalId
-    identityId: identity.outputs.principalId
+    userPrincipalId: principalId
+    managedIdentityId: identity.outputs.principalId
   }
 }
 
-// Backing storage for Azure functions backend API
+// Create a storage account
 module storage './core/storage/storage-account.bicep' = {
   name: 'storage'
   scope: rg
@@ -96,7 +86,8 @@ module userAssignStorage './app/role-assignment.bicep' = {
   scope: rg
   params: {
     principalId: principalId
-    roleDefinitionID: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    roleDefinitionID: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // built-in role definition id for storage blob data contributor
+    principalType: 'User'
   }
 }
 
@@ -107,6 +98,7 @@ module appAssignStorage './app/role-assignment.bicep' = {
   params: {
     principalId: identity.outputs.principalId
     roleDefinitionID: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    principalType: 'ServicePrincipal'
   }
 }
 
@@ -119,11 +111,11 @@ module appService 'core/host/appservice.bicep' = {
     tags: union(tags, { 'azd-service-name': 'web' })
     appServicePlanId: appServicePlan.outputs.id
     runtimeName: 'dotnet'
-    runtimeVersion: 'v8.0'
+    runtimeVersion: '8.0'
     userAssignedIdentityId: identity.outputs.resourceId
     storageEndpoint: storage.outputs.primaryEndpoints.blob
     cosmosDbEndpoint: cosmos.outputs.endpoint
-    userAssignedIdentityPrincipalId: identity.outputs.principalId
+    userAssignedIdentityClientId: identity.outputs.clientId
   }
 }
 
@@ -140,24 +132,6 @@ module appServicePlan './core/host/appserviceplan.bicep' = {
     }
   }
 }
-
-// module web './app/container-app.bicep' = {
-//   name: serviceName
-//   scope: rg
-//   params: {
-//     envName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appContainerApps}env-${resourceToken}'
-//     appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
-//     databaseAccountEndpoint: cosmos.outputs.endpoint
-//     storageAccountEndpoint: storage.outputs.primaryEndpoints.blob
-//     userAssignedManagedIdentity: {
-//       resourceId: identity.outputs.resourceId
-//       clientId: identity.outputs.clientId
-//     }
-//     location: location
-//     tags: tags
-//     serviceTag: serviceName
-//   }
-// }
 
 // Add outputs from the deployment here, if needed.
 //

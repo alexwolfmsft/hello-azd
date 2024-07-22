@@ -1,11 +1,11 @@
 metadata description = 'Sample template to deploy an Azure Cosmos DB for NoSQL account and give yourself role-based access to it.'
 
 @description('The principal ID of the user or service principal to assign the role to.')
-param principalId string
+param userPrincipalId string
 
 
 @description('The principal ID of the managed identity to assign the role to.')
-param identityId string
+param managedIdentityId string
 
 @description('The name of the Azure Cosmos DB account.')
 param azureCosmosDBAccountName string = 'csms-${toLower(uniqueString(subscription().id, resourceGroup().id, resourceGroup().location))}'
@@ -29,7 +29,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
 }
 
 resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
-  name: 'database'
+  name: 'Tickets'
   parent: account
   properties: {
     resource: {
@@ -39,7 +39,7 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15
 }
 
 resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
-  name: 'container'
+  name: 'Support'
   parent: database
   properties: {
     options: {
@@ -80,20 +80,20 @@ resource definition 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions@20
 }
 
 resource assignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
-  name: guid(definition.id, principalId, account.id)
+  name: guid(definition.id, userPrincipalId, account.id)
   parent: account
   properties: {
-    principalId: principalId
+    principalId: userPrincipalId
     roleDefinitionId: definition.id
     scope: account.id
   }
 }
 
 resource identityAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
-  name: guid(definition.id, identityId, account.id)
+  name: guid(definition.id, managedIdentityId, account.id)
   parent: account
   properties: {
-    principalId: identityId
+    principalId: managedIdentityId
     roleDefinitionId: definition.id
     scope: account.id
   }

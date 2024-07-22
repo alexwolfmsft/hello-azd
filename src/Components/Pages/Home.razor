@@ -26,10 +26,10 @@
                 <MudText>Packaged up your app code for deployment</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created an Azure Container Apps service</MudText>
+                <MudText>Created an Azure App Service and Azure App Service Plan</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created an Azure Storage account</MudText>
+                <MudText>Created an Azure Storage account to hold documents</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
                 <MudText>Created an Azure CosmosDB for NoSQL account, database and container</MudText>
@@ -44,7 +44,7 @@
                 <MudText>Configured environment settings to connect the app to the Azure Storage and Azure CosmosDB for NoSQL endpoints</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Deployed the app to Azure Container Apps</MudText>
+                <MudText>Deployed the app to Azure App Service</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Success">
                 <MudText>The app is ready to use!</MudText>
@@ -54,6 +54,18 @@
     </MudItem>
     <MudItem xs="12" sm="6">
         
+        <MudPaper Class="pa-6">
+            <MudText Typo="Typo.h4" Class="mb-4">Explore the sample app</MudText>
+            <MudDivider />
+            <MudButton Href="/sample"
+                Target="_blank"
+                Variant="Variant.Filled"
+                EndIcon="@Icons.Custom.Brands.GitHub"
+                Color="Color.Primary"
+                Disabled=@disabled>
+                    Try the app
+            </MudButton>
+        </MudPaper>
         <MudPaper Class="pa-6">
             <MudText Typo="Typo.h4" Class="mb-4">Learning resources</MudText>
             <MudDivider />
@@ -81,18 +93,18 @@
             <MudDivider />
         <MudList T="string">
             <MudListItem>
-                <MudLink Href="https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/overview" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-                    <b>Azure Developer CLI Documentation</b>
+                <MudLink Href="https://github.com/azure-samples/todo-csharp-sql" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
+                    <b>React Web App with C# API and SQL Database on Azure</b>
                 </MudLink>
             </MudListItem>
             <MudListItem>
-                <MudLink Href="https://azure.github.io/awesome-azd/?tags=python" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-                    <b>Awesome AZD template gallery</b>
+                <MudLink Href="https://github.com/azure-samples/todo-nodejs-mongo" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
+                    <b>React Web App with Node.js API and MongoDB on Azure</b>
                 </MudLink>
             </MudListItem>
             <MudListItem>
-                <MudLink Href="https://learn.microsoft.com/en-us/training/paths/azure-developer-cli/" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-                    <b>Azure Developer CLI  training modules</b>
+                <MudLink Href="https://github.com/azure-samples/todo-python-mongo" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
+                    <b>React Web App with Python API and MongoDB on Azure</b>
                 </MudLink>
             </MudListItem>
         </MudList>
