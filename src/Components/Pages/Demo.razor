@@ -1,4 +1,4 @@
-﻿@page "/sample"
+﻿@page "/demo"
 
 @using System.ComponentModel.DataAnnotations
 @using Azure.Identity
@@ -13,7 +13,9 @@
             <MudText Typo="Typo.h2" GutterBottom="true">Sample ticket manager</MudText>
             <MudDivider Class="my-6" />
         </MudItem>
-        <p class="mb-4">The azd template deployed a sample app to Azure Container Apps and provisioned supporting resources. To test the app, fill out the form, select an attachment, and then click submit. The form data will be stored in Azure CosmosDB for NoSQL and the file will be stored in Blob Storage.</p>
+        <MudPaper Class="my-6 pa-6">
+            The azd template deployed a sample app to Azure App Service and provisioned supporting resources. To test the app, fill out the form, select an attachment, and then click submit. The form data will be stored in Azure CosmosDB for NoSQL and the file will be stored in Blob Storage.
+        </MudPaper>
         <MudPaper Class="pa-4">
             <EditForm Model="ticket" OnValidSubmit="Submit">
                 <MudText Typo="Typo.h4" GutterBottom="true">Submit a new ticket</MudText><MudDivider />
@@ -79,6 +81,10 @@
         {
             <MudPaper Class="mt-12 pa-6">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" /> Loading tickets...
+            </MudPaper>
+        } else {
+            <MudPaper Class="mt-12 pa-6">
+                No tickets have been submitted yet.
             </MudPaper>
         }
 
