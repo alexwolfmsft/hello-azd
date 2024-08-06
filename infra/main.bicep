@@ -107,6 +107,7 @@ module appAssignStorage './app/role-assignment.bicep' = {
   }
 }
 
+// Create the app service
 module appService 'core/host/appservice.bicep' = {
   name: 'appService'
   scope: rg
