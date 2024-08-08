@@ -15,6 +15,9 @@ param location string
 
 param storageAccountName string = ''
 param appServicePlanName string = ''
+param containerAppsEnvName string = ''
+param containerAppsAppName string = ''
+param serviceName string = 'web'
 
 // Optional parameters to override the default azd resource naming conventions.
 // Add the following to main.parameters.json to provide values:
@@ -107,35 +110,68 @@ module appAssignStorage './app/role-assignment.bicep' = {
   }
 }
 
-// Create the app service
-module appService 'core/host/appservice.bicep' = {
-  name: 'appService'
+// // Create the app service
+// module appService 'core/host/appservice.bicep' = {
+//   name: 'appService'
+//   scope: rg
+//   params: {
+//     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webSitesAppService}${resourceToken}'
+//     location: location
+//     tags: union(tags, { 'azd-service-name': 'web' })
+//     appServicePlanId: appServicePlan.outputs.id
+//     runtimeName: 'dotnet'
+//     runtimeVersion: '8.0'
+//     userAssignedIdentityId: identity.outputs.resourceId
+//     storageEndpoint: storage.outputs.primaryEndpoints.blob
+//     cosmosDbEndpoint: cosmos.outputs.endpoint
+//     userAssignedIdentityClientId: identity.outputs.clientId
+//   }
+// }
+
+// // Create an App Service Plan to group applications under the same payment plan and SKU
+// module appServicePlan './core/host/appserviceplan.bicep' = {
+//   name: 'appserviceplan'
+//   scope: rg
+//   params: {
+//     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+//     location: location
+//     tags: tags
+//     sku: {
+//       name: 'S1'
+//     }
+//   }
+// }
+
+module containerRegistry 'core/host/container-registry.bicep' = {
+  name: 'container-registry'
   scope: rg
   params: {
-    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webSitesAppService}${resourceToken}'
+    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
-    tags: union(tags, { 'azd-service-name': 'web' })
-    appServicePlanId: appServicePlan.outputs.id
-    runtimeName: 'dotnet'
-    runtimeVersion: '8.0'
-    userAssignedIdentityId: identity.outputs.resourceId
-    storageEndpoint: storage.outputs.primaryEndpoints.blob
-    cosmosDbEndpoint: cosmos.outputs.endpoint
-    userAssignedIdentityClientId: identity.outputs.clientId
+    tags: tags
+    adminUserEnabled: false
+    anonymousPullEnabled: true
+    publicNetworkAccess: 'Enabled'
+    sku: {
+      name: 'Standard'
+    }
   }
 }
 
-// Create an App Service Plan to group applications under the same payment plan and SKU
-module appServicePlan './core/host/appserviceplan.bicep' = {
-  name: 'appserviceplan'
+module web 'app/web.bicep' = {
+  name: serviceName
   scope: rg
   params: {
-    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+    envName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
+    appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
+    databaseAccountEndpoint: cosmos.outputs.endpoint
+    userAssignedManagedIdentity: {
+      resourceId: identity.outputs.resourceId
+      clientId: identity.outputs.clientId
+    }
     location: location
     tags: tags
-    sku: {
-      name: 'S1'
-    }
+    serviceTag: serviceName
   }
 }
 
@@ -149,3 +185,13 @@ module appServicePlan './core/host/appserviceplan.bicep' = {
 // To see these outputs, run `azd env get-values`,  or `azd env get-values --output json` for json output.
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
+// Container outputs
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
+output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+
+// Application outputs
+output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.endpoint
+output AZURE_CONTAINER_ENVIRONMENT_NAME string = web.outputs.envName
+
+// Identity outputs
+output AZURE_USER_ASSIGNED_IDENTITY_NAME string = identity.outputs.name

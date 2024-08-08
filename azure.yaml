@@ -12,10 +12,16 @@ services:
   ## The language is 'python'.
   ## The source code is located in the project (azure.yaml) directory.
   ## The service will be hosted on Azure App Service.
+  # web:
+  #   language: csharp
+  #   project: ./src
+  #   host: appservice
   web:
-    language: csharp
     project: ./src
-    host: appservice
+    language: csharp
+    host: containerapp
+    docker:
+      path: ./Dockerfile
 #   ## An example for a NodeJS API, located in src/api.
 #   nodejs-api:
 #     language: js
