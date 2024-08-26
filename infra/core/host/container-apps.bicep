@@ -7,7 +7,7 @@ param containerAppsEnvironmentName string
 param containerRegistryName string
 param containerRegistryResourceGroupName string = ''
 param containerRegistryAdminUserEnabled bool = false
-param logAnalyticsWorkspaceName string
+param logAnalyticsWorkspaceName string = ''
 param applicationInsightsName string = ''
 param daprEnabled bool = false
 

@@ -18,6 +18,7 @@ param appServicePlanName string = ''
 param containerAppsEnvName string = ''
 param containerAppsAppName string = ''
 param serviceName string = 'web'
+param containerRegistryName string = ''
 
 // Optional parameters to override the default azd resource naming conventions.
 // Add the following to main.parameters.json to provide values:
@@ -142,27 +143,27 @@ module appAssignStorage './app/role-assignment.bicep' = {
 //   }
 // }
 
-module containerRegistry 'core/host/container-registry.bicep' = {
-  name: 'container-registry'
-  scope: rg
-  params: {
-    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.containerRegistryRegistries}${resourceToken}'
-    location: location
-    tags: tags
-    adminUserEnabled: false
-    anonymousPullEnabled: true
-    publicNetworkAccess: 'Enabled'
-    sku: {
-      name: 'Standard'
-    }
-  }
-}
+// module containerRegistry 'core/host/container-registry.bicep' = {
+//   name: 'container-registry'
+//   scope: rg
+//   params: {
+//     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+//     location: location
+//     tags: tags
+//     adminUserEnabled: false
+//     anonymousPullEnabled: true
+//     publicNetworkAccess: 'Enabled'
+//     sku: {
+//       name: 'Standard'
+//     }
+//   }
+// }
 
 module web 'app/web.bicep' = {
   name: serviceName
   scope: rg
   params: {
-    envName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
+    parentEnvironmentName: containerApps.outputs.environmentName
     appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
     databaseAccountEndpoint: cosmos.outputs.endpoint
     userAssignedManagedIdentity: {
@@ -172,6 +173,19 @@ module web 'app/web.bicep' = {
     location: location
     tags: tags
     serviceTag: serviceName
+  }
+}
+
+// Container apps host (including container registry)
+module containerApps './core/host/container-apps.bicep' = {
+  name: 'container-apps'
+  scope: rg
+  params: {
+    name: 'app'
+    containerAppsEnvironmentName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
+    containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    containerRegistryAdminUserEnabled: true
+    location: location
   }
 }
 
@@ -186,12 +200,12 @@ module web 'app/web.bicep' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 // Container outputs
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
-output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerApps.outputs.registryLoginServer
+output AZURE_CONTAINER_REGISTRY_NAME string = containerApps.outputs.registryName
 
-// Application outputs
-output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.endpoint
-output AZURE_CONTAINER_ENVIRONMENT_NAME string = web.outputs.envName
+// // Application outputs
+// output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.endpoint
+// output AZURE_CONTAINER_ENVIRONMENT_NAME string = web.outputs.envName
 
 // Identity outputs
 output AZURE_USER_ASSIGNED_IDENTITY_NAME string = identity.outputs.name

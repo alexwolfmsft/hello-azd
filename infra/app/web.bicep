@@ -1,6 +1,6 @@
 metadata description = 'Create web application resources.'
 
-param envName string
+param parentEnvironmentName string
 param appName string
 param serviceTag string
 param location string = resourceGroup().location
@@ -17,20 +17,11 @@ type managedIdentity = {
 @description('Unique identifier for user-assigned managed identity.')
 param userAssignedManagedIdentity managedIdentity
 
-module containerAppsEnvironment '../core/host/container-apps-environment.bicep' = {
-  name: 'container-apps-env'
-  params: {
-    name: envName
-    location: location
-    tags: tags
-  }
-}
-
 module containerAppsApp '../core/host/container-apps/app.bicep' = {
   name: 'container-apps-app'
   params: {
     name: appName
-    parentEnvironmentName: containerAppsEnvironment.outputs.name
+    parentEnvironmentName: parentEnvironmentName
     location: location
     tags: union(tags, {
         'azd-service-name': serviceTag
