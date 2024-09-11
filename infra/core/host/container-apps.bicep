@@ -31,6 +31,10 @@ module containerRegistry 'container-registry.bicep' = {
     location: location
     adminUserEnabled: containerRegistryAdminUserEnabled
     tags: tags
+    sku: {
+      name: 'Standard'
+    }
+    anonymousPullEnabled: true
   }
 }
 
