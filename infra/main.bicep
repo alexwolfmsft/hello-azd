@@ -117,9 +117,7 @@ module containerAppsEnv './core/host/container-apps.bicep' = {
     name: 'app'
     containerAppsEnvironmentName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
     containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
-    containerRegistryAdminUserEnabled: true
     location: location
-    
   }
 }
 
