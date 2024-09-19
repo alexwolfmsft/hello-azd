@@ -13,11 +13,13 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
+@description('Id of the user or app to assign application roles')
+param principalId string = ''
+
 param storageAccountName string = ''
-param appServicePlanName string = ''
 param containerAppsEnvName string = ''
 param containerAppsAppName string = ''
-param serviceName string = 'web'
+param serviceName string = 'aca'
 param containerRegistryName string = ''
 
 // Optional parameters to override the default azd resource naming conventions.
@@ -26,9 +28,6 @@ param containerRegistryName string = ''
 //      "value": "myGroupName"
 // }
 param resourceGroupName string = ''
-
-@description('Id of the user or app to assign application roles')
-param principalId string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 
@@ -47,7 +46,6 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
   location: location
-  tags: tags
 }
 
 // Add resources to be provisioned below.
@@ -90,68 +88,29 @@ module storage './core/storage/storage-account.bicep' = {
 }
 
 // Assign storage blob data contributor to the user for local runs
-module userAssignStorage './app/role-assignment.bicep' = {
+module userAssignStorage './core/security/role.bicep' = {
   name: 'assignStorage'
   scope: rg
   params: {
     principalId: principalId
-    roleDefinitionID: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // built-in role definition id for storage blob data contributor
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // built-in role definition id for storage blob data contributor
     principalType: 'User'
   }
 }
 
 // Assign storage blob data contributor to the identity
-module identityAssignStorage './app/role-assignment.bicep' = {
+module identityAssignStorage './core/security/role.bicep' = {
   name: 'identityAssignStorage'
   scope: rg
   params: {
     principalId: identity.outputs.principalId
-    roleDefinitionID: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
     principalType: 'ServicePrincipal'
   }
 }
 
-// Assign acr pull to the user for local runs
-module userAssignACR './app/role-assignment.bicep' = {
-  name: 'userAssignACR'
-  scope: rg
-  params: {
-    principalId: principalId
-    roleDefinitionID: '	7f951dda-4ed3-4680-a7ca-43fe172d538d'
-    principalType: 'User'
-  }
-}
-
-// Assign acr pull to the identity
-module identityAssignACR './app/role-assignment.bicep' = {
-  name: 'identityAssignACR'
-  scope: rg
-  params: {
-    principalId: identity.outputs.principalId
-    roleDefinitionID: '	7f951dda-4ed3-4680-a7ca-43fe172d538d'
-    principalType: 'ServicePrincipal'
-  }
-}
-
-module web 'app/web.bicep' = {
-  name: serviceName
-  scope: rg
-  params: {
-    parentEnvironmentName: containerApps.outputs.environmentName
-    appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
-    databaseAccountEndpoint: cosmos.outputs.endpoint
-    userAssignedManagedIdentity: {
-      resourceId: identity.outputs.resourceId
-      clientId: identity.outputs.clientId
-    }
-    location: location
-    tags: tags
-    serviceTag: serviceName
-  }
-}
-
-// Container apps host (including container registry)
-module containerApps './core/host/container-apps.bicep' = {
+// Container apps env and registry
+module containerAppsEnv './core/host/container-apps.bicep' = {
   name: 'container-apps'
   scope: rg
   params: {
@@ -160,6 +119,28 @@ module containerApps './core/host/container-apps.bicep' = {
     containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     containerRegistryAdminUserEnabled: true
     location: location
+    
+  }
+}
+
+// Container app
+module web 'app/app.bicep' = {
+  name: serviceName
+  scope: rg
+  params: {
+    appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
+    databaseAccountEndpoint: cosmos.outputs.endpoint
+    containerAppsEnvironmentName: containerAppsEnv.outputs.environmentName
+    containerRegistryName: containerAppsEnv.outputs.registryName
+    userAssignedManagedIdentity: {
+      resourceId: identity.outputs.resourceId
+      clientId: identity.outputs.clientId
+    }
+    location: location
+    tags: tags
+    serviceName: serviceName
+    exists: false
+    identityName: identity.outputs.name
   }
 }
 
@@ -174,8 +155,8 @@ module containerApps './core/host/container-apps.bicep' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 // Container outputs
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerApps.outputs.registryLoginServer
-output AZURE_CONTAINER_REGISTRY_NAME string = containerApps.outputs.registryName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerAppsEnv.outputs.registryLoginServer
+output AZURE_CONTAINER_REGISTRY_NAME string = containerAppsEnv.outputs.registryName
 
 // // Application outputs
 // output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.endpoint

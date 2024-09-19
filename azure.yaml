@@ -16,7 +16,7 @@ services:
   #   language: csharp
   #   project: ./src
   #   host: appservice
-  web:
+  aca:
     project: ./src
     language: csharp
     host: containerapp
