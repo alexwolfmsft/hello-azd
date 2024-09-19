@@ -34,7 +34,7 @@ module containerRegistry 'container-registry.bicep' = {
     sku: {
       name: 'Standard'
     }
-    anonymousPullEnabled: true
+    anonymousPullEnabled: false
   }
 }
 

@@ -89,7 +89,7 @@ module storage './core/storage/storage-account.bicep' = {
   }
 }
 
-// Assign storage blob data contributor to the user
+// Assign storage blob data contributor to the user for local runs
 module userAssignStorage './app/role-assignment.bicep' = {
   name: 'assignStorage'
   scope: rg
@@ -100,9 +100,9 @@ module userAssignStorage './app/role-assignment.bicep' = {
   }
 }
 
-// Assign storage blob data contributor to the app
-module appAssignStorage './app/role-assignment.bicep' = {
-  name: 'appAssignStorage'
+// Assign storage blob data contributor to the identity
+module identityAssignStorage './app/role-assignment.bicep' = {
+  name: 'identityAssignStorage'
   scope: rg
   params: {
     principalId: identity.outputs.principalId
@@ -111,53 +111,27 @@ module appAssignStorage './app/role-assignment.bicep' = {
   }
 }
 
-// // Create the app service
-// module appService 'core/host/appservice.bicep' = {
-//   name: 'appService'
-//   scope: rg
-//   params: {
-//     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webSitesAppService}${resourceToken}'
-//     location: location
-//     tags: union(tags, { 'azd-service-name': 'web' })
-//     appServicePlanId: appServicePlan.outputs.id
-//     runtimeName: 'dotnet'
-//     runtimeVersion: '8.0'
-//     userAssignedIdentityId: identity.outputs.resourceId
-//     storageEndpoint: storage.outputs.primaryEndpoints.blob
-//     cosmosDbEndpoint: cosmos.outputs.endpoint
-//     userAssignedIdentityClientId: identity.outputs.clientId
-//   }
-// }
+// Assign acr pull to the user for local runs
+module userAssignACR './app/role-assignment.bicep' = {
+  name: 'userAssignACR'
+  scope: rg
+  params: {
+    principalId: principalId
+    roleDefinitionID: '	7f951dda-4ed3-4680-a7ca-43fe172d538d'
+    principalType: 'User'
+  }
+}
 
-// // Create an App Service Plan to group applications under the same payment plan and SKU
-// module appServicePlan './core/host/appserviceplan.bicep' = {
-//   name: 'appserviceplan'
-//   scope: rg
-//   params: {
-//     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
-//     location: location
-//     tags: tags
-//     sku: {
-//       name: 'S1'
-//     }
-//   }
-// }
-
-// module containerRegistry 'core/host/container-registry.bicep' = {
-//   name: 'container-registry'
-//   scope: rg
-//   params: {
-//     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.containerRegistryRegistries}${resourceToken}'
-//     location: location
-//     tags: tags
-//     adminUserEnabled: false
-//     anonymousPullEnabled: true
-//     publicNetworkAccess: 'Enabled'
-//     sku: {
-//       name: 'Standard'
-//     }
-//   }
-// }
+// Assign acr pull to the identity
+module identityAssignACR './app/role-assignment.bicep' = {
+  name: 'identityAssignACR'
+  scope: rg
+  params: {
+    principalId: identity.outputs.principalId
+    roleDefinitionID: '	7f951dda-4ed3-4680-a7ca-43fe172d538d'
+    principalType: 'ServicePrincipal'
+  }
+}
 
 module web 'app/web.bicep' = {
   name: serviceName
