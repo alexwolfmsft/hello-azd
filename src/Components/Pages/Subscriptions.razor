@@ -1,0 +1,88 @@
+@page "/subscriptions"
+@using HelloAZD.Services
+@inject SubscriptionService subscriptionService
+
+<PageTitle>Azure Subscriptions</PageTitle>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h2" GutterBottom="true">Azure Subscriptions</MudText>
+        <MudDivider Class="my-6" />
+    </MudItem>
+    
+    <MudItem xs="12">
+        <MudPaper Class="pa-6">
+            <MudText Typo="Typo.h4" GutterBottom="true">Your Azure Subscriptions</MudText>
+            <MudDivider />
+            <br />
+            <MudText>This page displays all Azure subscriptions accessible with the current authentication context.</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        @if (loading)
+        {
+            <MudPaper Class="pa-6">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" /> Loading subscriptions...
+            </MudPaper>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudPaper Class="pa-6">
+                <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+            </MudPaper>
+        }
+        else if (subscriptions.Count == 0)
+        {
+            <MudPaper Class="pa-6">
+                <MudText>No subscriptions found.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Class="pa-6">
+                <MudTable Items="@subscriptions" Hover="true" Striped="true" Bordered="true">
+                    <HeaderContent>
+                        <MudTh>Display Name</MudTh>
+                        <MudTh>Subscription ID</MudTh>
+                        <MudTh>State</MudTh>
+                        <MudTh>Tenant ID</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Display Name">@context.DisplayName</MudTd>
+                        <MudTd DataLabel="Subscription ID">@context.SubscriptionId</MudTd>
+                        <MudTd DataLabel="State">
+                            <MudChip T="string" Color="@(context.State == "Enabled" ? Color.Success : Color.Warning)" Size="Size.Small">
+                                @context.State
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Tenant ID">@context.TenantId</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<SubscriptionData> subscriptions = new();
+    private bool loading = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+            subscriptions = await subscriptionService.GetSubscriptionsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading subscriptions: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
