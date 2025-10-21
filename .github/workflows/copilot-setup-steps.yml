@@ -19,3 +19,17 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve Azure Subscriptions with Copilot
+        uses: github/copilot-coding-agent@v1
+        with:
+          task: |
+            Use the Azure tools to retrieve and log all Azure subscriptions. 
+            Please list the subscription names, IDs, and current status.
+            Format the output clearly and ensure it's logged to the console output 
+            so it's visible in the GitHub Actions workflow logs.
+          azure_auth: true
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
