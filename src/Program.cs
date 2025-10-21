@@ -1,7 +1,9 @@
 using MudBlazor.Services;
 using HelloAZD.Components;
+using HelloAZD.Services;
 using Microsoft.Azure.Cosmos;
 using Azure.Identity;
+using Azure.ResourceManager;
 using Microsoft.Extensions.Azure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +27,10 @@ builder.Services.AddAzureClients(clientBuilder =>
     });
     clientBuilder.UseCredential(identity);
 });
+
+// Register ArmClient and SubscriptionService
+builder.Services.AddSingleton(new ArmClient(identity));
+builder.Services.AddScoped<SubscriptionService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
