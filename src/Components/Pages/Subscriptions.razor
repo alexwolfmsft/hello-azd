@@ -1,0 +1,111 @@
+@page "/subscriptions"
+
+@using Azure.ResourceManager
+@using Azure.ResourceManager.Resources
+@using Azure.Identity
+@inject DefaultAzureCredential azureCredential
+
+<PageTitle>Azure Subscriptions</PageTitle>
+
+<MudGrid>
+    <MudItem sm="12">
+        <MudText Typo="Typo.h2" GutterBottom="true">Azure Subscriptions</MudText>
+        <MudDivider Class="my-6" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Class="pa-6">
+            <MudText Typo="Typo.h4" GutterBottom="true">Your Azure Subscriptions</MudText>
+            <MudDivider />
+            <br />
+            <MudText>This page displays all Azure subscriptions accessible to your account.</MudText>
+        </MudPaper>
+    </MudItem>
+
+    @if (loading)
+    {
+        <MudItem xs="12">
+            <MudPaper Class="pa-6">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" /> Loading subscriptions...
+            </MudPaper>
+        </MudItem>
+    }
+    else if (!String.IsNullOrEmpty(error))
+    {
+        <MudItem xs="12">
+            <MudPaper Class="pa-6">
+                <MudText Color="@Color.Error">Error loading subscriptions: @error</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+    else if (subscriptions.Count == 0)
+    {
+        <MudItem xs="12">
+            <MudPaper Class="pa-6">
+                <MudText>No subscriptions found.</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+    else
+    {
+        <MudItem xs="12">
+            <MudPaper Class="pa-6">
+                <MudTable Striped="true" Bordered="true" Items="@subscriptions" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Subscription Name</MudTh>
+                        <MudTh>Subscription ID</MudTh>
+                        <MudTh>State</MudTh>
+                        <MudTh>Tenant ID</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.DisplayName</MudTd>
+                        <MudTd DataLabel="ID">@context.SubscriptionId</MudTd>
+                        <MudTd DataLabel="State">@context.State</MudTd>
+                        <MudTd DataLabel="TenantId">@context.TenantId</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private List<SubscriptionData> subscriptions = new();
+    private bool loading = true;
+    private string error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+            
+            var armClient = new ArmClient(azureCredential);
+            
+            await foreach (var subscription in armClient.GetSubscriptions().GetAllAsync())
+            {
+                subscriptions.Add(new SubscriptionData
+                {
+                    DisplayName = subscription.Data.DisplayName,
+                    SubscriptionId = subscription.Data.SubscriptionId,
+                    State = subscription.Data.State?.ToString() ?? "Unknown",
+                    TenantId = subscription.Data.TenantId?.ToString() ?? "Unknown"
+                });
+            }
+            
+            loading = false;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            loading = false;
+        }
+    }
+
+    private class SubscriptionData
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public string SubscriptionId { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string TenantId { get; set; } = string.Empty;
+    }
+}

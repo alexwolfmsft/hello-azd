@@ -11,6 +11,9 @@ builder.Services.AddMudServices();
 
 var identity = new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"] });
 
+// Register DefaultAzureCredential as a singleton service
+builder.Services.AddSingleton(identity);
+
 builder.Services.AddAzureClients(clientBuilder =>
 {
     // Register clients for each service
