@@ -3,6 +3,7 @@ using HelloAZD.Components;
 using Microsoft.Azure.Cosmos;
 using Azure.Identity;
 using Microsoft.Extensions.Azure;
+using Azure.ResourceManager;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,26 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
+// List and log Azure subscriptions
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+try
+{
+    var armClient = new ArmClient(identity);
+    var subscriptions = armClient.GetSubscriptions();
+    
+    logger.LogInformation("Listing Azure subscriptions:");
+    await foreach (var subscription in subscriptions)
+    {
+        logger.LogInformation("Subscription: {SubscriptionName} (ID: {SubscriptionId}, State: {State})", 
+            subscription.Data.DisplayName, 
+            subscription.Data.SubscriptionId, 
+            subscription.Data.State);
+    }
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "Error listing Azure subscriptions");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
